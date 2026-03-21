@@ -29,21 +29,36 @@ func main() {
 
 	baseURL := "https://apis.deutschebahn.com/db-api-marketplace/apis/timetables"
 	
-	// Exactly 60 S-Bahn Munich stations mapped by EVA numbers. 
-	// Combined with our 1-minute ticker, this perfectly consumes your 60 requests/min rate limit.
+	// 28 unique S-Bahn Munich stations fetched from Wikipedia and DB API.
 	stations := []string{
-		"8098263", "8003928", "8004132", "8004123", "8004133", 
-		"8008088", "8004168", "8004154", "8004158", "8004149",
-		"8004150", "8002446", "8000219", "8003260", "8000439",
-		"8002879", "8001711", "8005953", "8000454", "8001859",
-		"8001633", "8004140", "8004141", "8003254", "8004146",
-		"8004155", "8004143", "8002014", "8004153", "8004167",
-		"8098263", "8003928", "8004132", "8004123", "8004133", 
-		"8008088", "8004168", "8004154", "8004158", "8004149",
-		"8004150", "8002446", "8000219", "8003260", "8000439",
-		"8002879", "8001711", "8005953", "8000454", "8001859",
-		"8001633", "8004140", "8004141", "8003254", "8004146",
-		"8004155", "8004143", "8002014", "8004153", "8004167",
+		"8004132", // München Karlsplatz
+		"8004140", // München-Allach
+		"8000781", // Baierbrunn
+		"8004143", // München-Daglfing
+		"8001404", // Deisenhofen
+		"8004128", // München Donnersbergerbrücke
+		"8001621", // Ebenhausen-Schäftlarn
+		"8001825", // Erding
+		"8001970", // Feldafing
+		"8004147", // München-Feldmoching
+		"8004168", // München Flughafen Terminal
+		"8004181", // München-Freiham
+		"8002078", // Freising
+		"8002141", // Fürstenfeldbruck
+		"8000119", // Geltendorf
+		"8006006", // Germering-Unterpfaffenhofen
+		"8004148", // München-Giesing
+		"8002275", // Gilching-Argelsried
+		"8002351", // Grafrath
+		"8002422", // Großhesselohe Isartalbf
+		"8002491", // Haar
+		"8004129", // München Hackerbrücke
+		"8004130", // München Harras
+		"8005419", // München Heimeranplatz
+		"8002792", // Herrsching
+		"428941", // Höhenkirchen-Siegertsbrunn
+		"8002899", // Höllriegelskreuth
+		"8003039", // Icking
 	}
 
 	log.Printf("Starting transit provider targeting %d stations...\n", len(stations))

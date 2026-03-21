@@ -54,6 +54,12 @@ func createSchema(db *sql.DB) error {
 		status_code INTEGER,
 		timestamp DATETIME
 	);
+
+	CREATE TABLE IF NOT EXISTS stations (
+		eva TEXT PRIMARY KEY,
+		name TEXT NOT NULL,
+		ds100 TEXT
+	);
 	`
 	_, err := db.Exec(query)
 	return err
@@ -103,6 +109,31 @@ func (s *SQLiteStorage) SaveRecords(ctx context.Context, records []domain.DelayR
 	for _, l := range logs {
 		_, err = stmtLogs.ExecContext(ctx, l.ID, l.StationID, l.StatusCode, l.Timestamp)
 		if err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
+}
+
+func (s *SQLiteStorage) SaveStations(ctx context.Context, stations []domain.Station) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	stmt, err := tx.PrepareContext(ctx, `
+		INSERT OR REPLACE INTO stations (eva, name, ds100) 
+		VALUES (?, ?, ?)
+	`)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	for _, st := range stations {
+		if _, err := stmt.ExecContext(ctx, st.EVA, st.Name, st.DS100); err != nil {
 			return err
 		}
 	}

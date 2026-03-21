@@ -32,3 +32,10 @@ type StationRequestLog struct {
 	StatusCode         int       // HTTP Status Code (200, 400, etc)
 	Timestamp          time.Time // Exact time of the request
 }
+
+// Station represents a transit station's master data.
+type Station struct {
+	EVA   string // The unique EVA string identifier
+	Name  string // The full name of the station, e.g., "München Marienplatz"
+	DS100 string // The DS100 abbreviation, e.g., "MMAR"
+}

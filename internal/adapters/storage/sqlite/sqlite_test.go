@@ -48,7 +48,7 @@ func TestSQLiteStorage(t *testing.T) {
 	}
 
 	// Test SaveRecords
-	err = storage.SaveRecords(ctx, records)
+	err = storage.SaveRecords(ctx, records, nil)
 	if err != nil {
 		t.Fatalf("SaveRecords failed: %v", err)
 	}

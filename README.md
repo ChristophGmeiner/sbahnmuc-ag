@@ -12,7 +12,7 @@ This project strictly follows the Hexagonal (Ports and Adapters) architecture pa
 ## Prerequisites
 
 - [Go 1.21+](https://golang.org/dl/)
-- Deutsche Bahn open data client credentials
+- [Deutsche Bahn Open Data Client Credentials](https://developers.deutschebahn.com/db-api-marketplace/apis/)
 
 ## Configuration
 
@@ -53,10 +53,24 @@ pkill -f sbahn-telemetry
 
 ## Engine Features & Polling Logic
 
-- **Rate Limit Optimization**: The Deutsche Bahn API strictly limits polling to 60 requests per minute. The polling engine is explicitly loaded with exactly 60 synchronized S-Bahn München EVA station identifiers alongside a 1-minute ticker to constantly pull the highest-resolution telemetry without triggering 429 timeouts.
+- **Real-Time Delays Polling (`/v1/fchg/{evaNo}`)**: The backend retrieves realtime timetable updates using the DB Timetables API.
+  - **Endpoint**: `https://apis.deutschebahn.com/db-api-marketplace/apis/timetables/v1/fchg/{evaNo}`
+  - **Extracted Fields**:
+    - `id`: Unique journey identifier (stop ID).
+    - `route_id`: The categorized line name (e.g., "S1", "S2").
+    - `expected_arrival`: Derived from `pt` (Planned Time) tag.
+    - `actual_arrival`: Derived from `ct` (Changed Time) tag.
+    - `delay_seconds`: Computed time difference (strictly >= 0).
+  *(Documentation: [DB Timetables API](https://developers.deutschebahn.com/db-api-marketplace/apis/product/timetables))*
+- **Rate Limit Optimization**: The Deutsche DB Timetables API strictly limits polling to 60 requests per minute. The polling engine is explicitly loaded with exactly 28 verified S-Bahn München EVA station identifiers (sourced from Wikipedia's master list) alongside a 1-minute ticker to constantly pull the highest-resolution telemetry safely without triggering 429 timeouts.
 - **Strict Data Filtering**: To prevent noise, the parsing engine aggressively scans the DB `fchg` XML payloads and filters exclusively for line names starting with `S` (dropping all "Unknown", "ICE", "RE", and "RB" trains from local storage).
 - **Zero-Delay Tracking**: The custom XML parser dynamically tracks trains even if they are lacking a `ct` (Changed Time) tag, identifying that they are operating 100% on schedule and successfully writing a `0` delay into the database.
 - **API Request Metadata Analytics**: A secondary data pipeline seamlessly tracks every individual `http.Client.Do()` request, actively capturing the exact timestamp, target station, and returned HTTP Status Code into a standalone analytic table so 400 errors can be natively diagnosed.
+- **Station Master Data Polling**: To provide full context for the raw EVA station numbers, the engine periodically queries the DB Timetables API `/v1/station/{eva}` endpoint directly for each of the 28 configured stations. This precisely resolves exact master data without wildcard query pollution, automatically extracting and storing crucial metadata into a separate `stations` table:
+  - `eva`: The internal DB station identifier.
+  - `name`: The human-readable station name (e.g., "München Marienplatz").
+  - `ds100`: The official alphanumeric DB location code (e.g., "MMAR").
+  *(Documentation: [DB Timetables API](https://developers.deutschebahn.com/db-api-marketplace/apis/product/timetables))*
 
 ## Linux Background Deployment (systemd)
 
@@ -107,9 +121,16 @@ sqlite3 telemetry.db "SELECT COUNT(*) FROM delay_records;"
 sqlite3 telemetry.db "DELETE FROM delay_records;"
 ```
 
+### Station Master Data (`stations`)
+
+**View the tracked stations and their metadata:**
+```bash
+sqlite3 telemetry.db "SELECT * FROM stations LIMIT 15;"
+```
+
 ### API Diagnostic Queries (`station_request_logs`)
 
-**See the 15 most recent network pings across the 60 tracked stations:**
+**See the 15 most recent network pings across the 28 tracked stations:**
 ```bash
 sqlite3 telemetry.db "SELECT * FROM station_request_logs LIMIT 15;"
 ```

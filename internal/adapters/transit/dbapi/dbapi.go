@@ -55,6 +55,17 @@ type Event struct {
 	Line        string `xml:"l,attr"`
 }
 
+type StationsResult struct {
+	XMLName xml.Name   `xml:"stations"`
+	Station []xmlStation `xml:"station"`
+}
+
+type xmlStation struct {
+	Name  string `xml:"name,attr"`
+	EVA   string `xml:"eva,attr"`
+	DS100 string `xml:"ds100,attr"`
+}
+
 func parseDBTime(t string) (time.Time, error) {
 	if t == "" {
 		return time.Time{}, fmt.Errorf("empty time")
@@ -209,4 +220,56 @@ func (p *Provider) fetchStation(ctx context.Context, evaNo string) ([]domain.Del
 	}
 
 	return records, reqLog, nil
+}
+
+func (p *Provider) FetchStations(ctx context.Context) ([]domain.Station, error) {
+	log.Printf("[TransitProvider] Querying DB API for station master data for %d configured stations...\n", len(p.stations))
+
+	var stations []domain.Station
+	for _, eva := range p.stations {
+		url := fmt.Sprintf("%s/v1/station/%s", p.baseURL, eva)
+
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+		if err != nil {
+			log.Printf("Warning: failed to create request for %s: %v\n", eva, err)
+			continue
+		}
+
+		req.Header.Set("DB-Client-Id", p.clientID)
+		req.Header.Set("DB-Api-Key", p.clientSecret)
+		req.Header.Set("Accept", "application/xml")
+
+		resp, err := p.client.Do(req)
+		if err != nil {
+			log.Printf("Warning: failed to execute request for %s: %v\n", eva, err)
+			continue
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			log.Printf("Warning: API returned %d for %s\n", resp.StatusCode, eva)
+			resp.Body.Close()
+			continue
+		}
+
+		var res StationsResult
+		if err := xml.NewDecoder(resp.Body).Decode(&res); err != nil {
+			log.Printf("Warning: failed to decode XML for %s: %v\n", eva, err)
+			resp.Body.Close()
+			continue
+		}
+		resp.Body.Close()
+
+		for _, s := range res.Station {
+			if s.EVA == eva {
+				stations = append(stations, domain.Station{
+					EVA:   s.EVA,
+					Name:  s.Name,
+					DS100: s.DS100,
+				})
+				break
+			}
+		}
+	}
+
+	return stations, nil
 }

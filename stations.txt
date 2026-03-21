@@ -1,0 +1,31 @@
+Go Slice for cmd/local/main.go:
+stations := []string{
+		"8004132", // München Karlsplatz
+		"8004140", // München-Allach
+		"8000781", // Baierbrunn
+		"8004143", // München-Daglfing
+		"8001404", // Deisenhofen
+		"8004128", // München Donnersbergerbrücke
+		"8001621", // Ebenhausen-Schäftlarn
+		"8001825", // Erding
+		"8001970", // Feldafing
+		"8004147", // München-Feldmoching
+		"8004168", // München Flughafen Terminal
+		"8004181", // München-Freiham
+		"8002078", // Freising
+		"8002141", // Fürstenfeldbruck
+		"8000119", // Geltendorf
+		"8006006", // Germering-Unterpfaffenhofen
+		"8004148", // München-Giesing
+		"8002275", // Gilching-Argelsried
+		"8002351", // Grafrath
+		"8002422", // Großhesselohe Isartalbf
+		"8002491", // Haar
+		"8004129", // München Hackerbrücke
+		"8004130", // München Harras
+		"8005419", // München Heimeranplatz
+		"8002792", // Herrsching
+		"428941", // Höhenkirchen-Siegertsbrunn
+		"8002899", // Höllriegelskreuth
+		"8003039", // Icking
+	}
