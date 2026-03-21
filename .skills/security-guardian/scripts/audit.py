@@ -23,9 +23,18 @@ def check_insecure_logic(content):
     try:
         tree = ast.parse(content)
         for node in ast.walk(tree):
-            if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
-                if node.func.id in DANGEROUS_FUNCTIONS:
-                    findings.append(f"Dangerous function usage: `{node.func.id}()` detected.")
+            if isinstance(node, ast.Call):
+                func = node.func
+                func_name = None
+                if isinstance(func, ast.Name):
+                    func_name = func.id
+                elif isinstance(func, ast.Attribute):
+                    val = func.value
+                    if isinstance(val, ast.Name):
+                        func_name = f"{val.id}.{func.attr}"
+                
+                if func_name and func_name in DANGEROUS_FUNCTIONS:
+                    findings.append(f"Dangerous function usage: `{func_name}()` detected.")
     except SyntaxError:
         pass # Handle non-python files differently or skip
     return findings
