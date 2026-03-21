@@ -2,6 +2,7 @@
 .env
 
 # Go Binaries & Build Output
+build/
 sbahn-telemetry
 __debug_bin
 *.exe
