@@ -1,0 +1,27 @@
+# Security / Environment
+.env
+
+# Go Binaries & Build Output
+sbahn-telemetry
+__debug_bin
+*.exe
+
+# Local Telemetry Datastores (SQLite + WAL mode)
+telemetry.db
+telemetry.db-shm
+telemetry.db-wal
+
+# Application Logs
+*.log
+telemetry-daemon.log
+
+# Go dependencies
+vendor/
+
+# macOS / System
+.DS_Store
+
+# IDE & Editor Folders
+.idea/
+.vscode/
+*.swp

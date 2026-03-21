@@ -1,0 +1,19 @@
+[Unit]
+Description=S-Bahn Muenchen Telemetry Polling Daemon
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=telemetryuser
+Group=telemetrygroup
+# Adjust the path to where the compiled binary and .env file will reside
+WorkingDirectory=/opt/sbahn-telemetry
+ExecStart=/opt/sbahn-telemetry/sbahn-telemetry
+Restart=on-failure
+RestartSec=10
+MemoryLimit=256M
+EnvironmentFile=/opt/sbahn-telemetry/.env
+
+[Install]
+WantedBy=multi-user.target

@@ -25,3 +25,6 @@ Stay Focused: DO NOT deviate from the current task instructions to perform tange
 - **Strictly Disable Auto-Execute:** NEVER execute ANY terminal command, script, or system action without my explicit, in-line, affirmative confirmation. ALWAYS present the command first and wait for approval.
 - **Limit File Access:** Restrict file system read/write operations ONLY to files explicitly provided or mentioned in the current request. ABSOLUTELY DO NOT access files in other directories.
 - **Confirm Dangerous Commands:** If the intended command is potentially destructive (e.g., `rm`, `mv`, `sudo`), you MUST explicitly preface the command proposal with a warning: 'WARNING: POTENTIALLY DESTRUCTIVE ACTION REQUIRED.'.
+
+Consider for more infos ALWAYS the informatio in the file S-Bahn-München-Telemetry-Application.pdf
+Always check README.md for more and current information.
