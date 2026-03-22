@@ -5,10 +5,14 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
+	"github.com/christophgmeiner/sbahnmuc-ag/internal/adapters/storage/bigquery"
+	"github.com/christophgmeiner/sbahnmuc-ag/internal/adapters/storage/multi"
 	"github.com/christophgmeiner/sbahnmuc-ag/internal/adapters/storage/sqlite"
 	"github.com/christophgmeiner/sbahnmuc-ag/internal/adapters/transit/dbapi"
+	"github.com/christophgmeiner/sbahnmuc-ag/internal/domain"
 	"github.com/christophgmeiner/sbahnmuc-ag/internal/engine"
 	"github.com/joho/godotenv"
 )
@@ -64,21 +68,60 @@ func main() {
 	log.Printf("Starting transit provider targeting %d stations...\n", len(stations))
 	transitProvider := dbapi.NewProvider(baseURL, clientID, clientSecret, stations)
 
-	dbPath := os.Getenv("DB_PATH")
-	if dbPath == "" {
-		dbPath = "telemetry.db"
-	}
-
-	storageProvider, err := sqlite.NewSQLiteStorage(dbPath)
-	if err != nil {
-		log.Fatalf("Failed to initialize SQLite storage: %v", err)
-	}
-	defer storageProvider.Close()
-
-	telemetryEngine := engine.NewEngine(transitProvider, storageProvider)
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	backendsEnv := os.Getenv("STORAGE_BACKENDS")
+	if backendsEnv == "" {
+		backendsEnv = "sqlite"
+	}
+	backendsList := strings.Split(backendsEnv, ",")
+
+	var providers []domain.StorageProvider
+
+	for _, backend := range backendsList {
+		backend = strings.TrimSpace(backend)
+		switch backend {
+		case "sqlite":
+			dbPath := os.Getenv("DB_PATH")
+			if dbPath == "" {
+				dbPath = "telemetry.db"
+			}
+			sqliteProvider, err := sqlite.NewSQLiteStorage(dbPath)
+			if err != nil {
+				log.Fatalf("Failed to initialize SQLite storage: %v", err)
+			}
+			defer sqliteProvider.Close()
+			providers = append(providers, sqliteProvider)
+			log.Println("SQLite storage initialized.")
+
+		case "bigquery":
+			projectID := os.Getenv("BQ_PROJECT_ID")
+			datasetID := os.Getenv("BQ_DATASET_ID")
+			if projectID == "" || datasetID == "" {
+				log.Fatal("BQ_PROJECT_ID and BQ_DATASET_ID must be set for bigquery storage")
+			}
+			bqProvider, err := bigquery.NewBigQueryStorage(ctx, projectID, datasetID)
+			if err != nil {
+				log.Fatalf("Failed to initialize BigQuery storage: %v", err)
+			}
+			defer bqProvider.Close()
+			providers = append(providers, bqProvider)
+			log.Println("BigQuery storage initialized.")
+
+		default:
+			log.Fatalf("Unknown storage backend: %s", backend)
+		}
+	}
+
+	var storageProvider domain.StorageProvider
+	if len(providers) == 1 {
+		storageProvider = providers[0]
+	} else {
+		storageProvider = multi.NewMultiStorage(providers...)
+	}
+
+	telemetryEngine := engine.NewEngine(transitProvider, storageProvider)
 
 	telemetryEngine.Start(ctx)
 
