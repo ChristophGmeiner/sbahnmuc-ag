@@ -33,7 +33,10 @@ sbahnmuc-ag/
 This project strictly follows the **Hexagonal (Ports and Adapters)** architecture pattern, separating core business logic from external dependencies:
 - **Core Engine (Golang)**: A background poller executing every 1 minute.
 - **Transit Provider (DB API)**: Integrates with the official DB Timetables API via client credentials to fetch realtime delay metrics.
-- **Storage Provider (SQLite)**: Stores time-series data locally using SQLite with Write-Ahead Logging (WAL) for safety and concurrent read/writes.
+- **Storage Provider**: A steerable metrics and data persistence layer supporting multiple backend targets concurrently.
+  - **SQLite**: Stores time-series data locally using Write-Ahead Logging (WAL) for safety and concurrent read/writes.
+  - **BigQuery**: A cloud-native analytical data warehouse (partitioned and clustered) for scalable reporting.
+  - **MultiStorage**: A composite router allowing writes to SQLite, BigQuery, or both simultaneously.
 
 ## Prerequisites
 
@@ -42,12 +45,21 @@ This project strictly follows the **Hexagonal (Ports and Adapters)** architectur
 
 ## Configuration
 
-The application requires a `.env` file in the root directory containing your DB API credentials:
+The application requires a `.env` file in the root directory containing your DB API credentials and storage configurations:
 
 ```env
 db_client_id=your_client_id_here
 db_client_secret_api_key=your_api_key_here
+
+# Storage Backend Routing (sqlite, bigquery, or both comma-separated)
+STORAGE_BACKENDS=sqlite,bigquery
+
+# SQLite Configuration
 DB_PATH=telemetry.db
+
+# BigQuery Configuration (required if 'bigquery' is in STORAGE_BACKENDS)
+BQ_PROJECT_ID=your-gcp-project-id
+BQ_DATASET_ID=sbahn_telemetry
 ```
 
 ## Running Locally
@@ -99,4 +111,20 @@ sqlite3 telemetry.db "SELECT route_id, delay_seconds, station_id, expected_arriv
 
 # See API diagnostics
 sqlite3 telemetry.db "SELECT * FROM station_request_logs WHERE status_code != 200;"
+```
+
+## Viewing Results in BigQuery
+
+If `bigquery` is enabled in your `STORAGE_BACKENDS`, you can run analytical queries directly in the GCP console or via the `bq` CLI on the automatically created tables (`delay_records`, `station_request_logs`, `stations`):
+
+```sql
+-- Calculate Punctuality Ratio and 90th Percentile Delay per Route
+SELECT 
+  route_id,
+  COUNT(*) as total_trips,
+  IFNULL(SUM(CASE WHEN delay_seconds < 360 THEN 1 ELSE 0 END) * 100.0 / NULLIF(COUNT(*), 0), 0) as punctuality_ratio,
+  APPROX_QUANTILES(delay_seconds, 100)[OFFSET(90)] as p90_delay
+FROM `your-gcp-project-id.sbahn_telemetry.delay_records`
+GROUP BY route_id
+ORDER BY punctuality_ratio ASC;
 ```
