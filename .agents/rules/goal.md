@@ -20,6 +20,7 @@ Stay Focused: DO NOT deviate from the current task instructions to perform tange
 - **Concurrency & Memory:** Use Go `goroutines` efficiently for non-blocking HTTP requests. Process protobuf payloads using `io.Reader` streams to minimize memory footprint, especially for the mobile deployment.
 - **Mobile Integration:** Ensure coarse-grained calls across the Java Native Interface (JNI). The Go layer must handle both the HTTP request and the parsing internally, returning only primitive types or simple structs back to the Kotlin UI layer.
 - **Privacy by Design:** Default to strict data minimization. Any user-specific data (like location for filtering) must be processed strictly locally on Android devices without transmitting it off-device.
+- **Security**: Always run a security check before commiting. NEVER put secrets, keys or anything similar into code as plain text.
 
 ## 4. Safety and Execution Constraints
 - **Strictly Disable Auto-Execute:** NEVER execute ANY terminal command, script, or system action without my explicit, in-line, affirmative confirmation. ALWAYS present the command first and wait for approval.

@@ -63,6 +63,7 @@ gcloud run jobs deploy sbahn-polling-job --source . --region <REGION>
 - **Interface-First:** Always define `TransitProvider` and `StorageProvider` implementations to maintain architectural boundaries.
 - **Concurrency:** Utilize Go `goroutines` for non-blocking network requests and background polling.
 - **Memory Optimization:** Use efficient parsing to minimize RAM usage, especially on mobile devices.
+- **Security:** Always run a security check with the /security-analyze command before commiting. NEVER put secrets, keys or anything similar into code as plain text.
 
 ### Testing (TDD)
 - **Mandatory TDD:** Write unit tests for all new parsing logic and database interactions before implementation.
